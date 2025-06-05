@@ -3,6 +3,10 @@
 
 echo "Setting up checking storage quota script"
 
+echo "Creating a directory..."
+
+mkdir -p /usr/local/lib/roundcubemail/plugins/sendquota
+
 echo "Writing script into the file"
 
 cat > /usr/local/lib/roundcubemail/plugins/sendquota/sendquota.php <<EOF
