@@ -91,6 +91,7 @@ cd "$HOME/mailinabox" || exit
 # 	echo
 # fi
 
+echo "Fetching latest code from git..."
 git fetch origin "$TAG" --depth 1
 
 # Start setup script.
