@@ -91,5 +91,7 @@ cd "$HOME/mailinabox" || exit
 # 	echo
 # fi
 
+git fetch origin "$TAG" --depth 1
+
 # Start setup script.
 setup/start.sh
