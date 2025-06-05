@@ -9,7 +9,7 @@ mkdir -p /usr/local/lib/roundcubemail/plugins/sendquota
 
 echo "Writing script into the file"
 
-cat > /usr/local/lib/roundcubemail/plugins/sendquota/sendquota.php <<EOF
+cat > /usr/local/lib/roundcubemail/plugins/sendquota/sendquota.php <<'EOF'
 <?php
 class sendquota extends rcube_plugin {
     public $task = 'mail';
@@ -65,7 +65,7 @@ cat > /usr/local/lib/roundcubemail/plugins/sendquota/sendquota.js <<EOF
 window.rcmail && rcmail.addEventListener('init', function() {
   const target = document.querySelector("#attachment-list");
   if (!target) {
-    console.warn("❌ #attachment-list not found");
+    console.warn("#attachment-list not found");
     return;
   }
 
@@ -115,11 +115,11 @@ window.rcmail && rcmail.addEventListener('init', function() {
         last?.click();
       }
     } catch (err) {
-      console.error("❌ Quota check failed:", err);
+      console.error("Quota check failed:", err);
     }
   });
 
-  // ✅ Observe attachment list mutations
+  // Observe attachment list mutations
   observer.observe(target, { childList: true, subtree: false });
 });
 
