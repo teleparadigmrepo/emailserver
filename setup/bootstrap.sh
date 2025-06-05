@@ -5,7 +5,7 @@
 #   curl https://mailinabox.email/setup.sh | sudo bash
 #
 #########################################################
-
+echo "Installing from Teleparadigm Reposistory"
 if [ -z "$TAG" ]; then
 	# If a version to install isn't explicitly given as an environment
 	# variable, then install the latest version. But the latest version
