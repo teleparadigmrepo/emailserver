@@ -113,7 +113,10 @@ tools/editconf.py /etc/postfix/master.cf -s -w \
 	  -o cleanup_service_name=authclean" \
 	"authclean=unix  n       -       -       -       0       cleanup
 	  -o header_checks=pcre:/etc/postfix/outgoing_mail_header_filters
-	  -o nested_header_checks="
+	  -o nested_header_checks=" \
+	"sender_policy unix  -       n       n       -       -       spawn
+	  user=postfixpolicy argv=/opt/mail-policies/sender_quota_policy.py
+	  flags=Rq"
 
 # Install the `outgoing_mail_header_filters` file required by the new 'authclean' service.
 cp conf/postfix_outgoing_mail_header_filters /etc/postfix/outgoing_mail_header_filters
@@ -238,7 +241,7 @@ tools/editconf.py /etc/postfix/main.cf  -e lmtp_destination_recipient_limit=
 # "450 4.7.1 Client host rejected: Service unavailable". This is a retry code, so the mail doesn't properly bounce. #NODOC
 tools/editconf.py /etc/postfix/main.cf \
 	smtpd_sender_restrictions="reject_non_fqdn_sender,reject_unknown_sender_domain,reject_authenticated_sender_login_mismatch,reject_rhsbl_sender dbl.spamhaus.org=127.0.1.[2..99]" \
-	smtpd_recipient_restrictions="permit_sasl_authenticated,permit_mynetworks,reject_rbl_client zen.spamhaus.org=127.0.0.[2..11],reject_unlisted_recipient,check_policy_service inet:127.0.0.1:10023,check_policy_service inet:127.0.0.1:12340"
+	smtpd_recipient_restrictions="check_policy_service inet:127.0.0.1:12340,check_policy_service unix:private/sender_policy,permit_sasl_authenticated,permit_mynetworks,reject_rbl_client zen.spamhaus.org=127.0.0.[2..11],reject_unlisted_recipient,check_policy_service inet:127.0.0.1:10023"
 
 # Postfix connects to Postgrey on the 127.0.0.1 interface specifically. Ensure that
 # Postgrey listens on the same interface (and not IPv6, for instance).
@@ -301,7 +304,7 @@ chmod +x /etc/cron.daily/mailinabox-postgrey-whitelist
 # Increase the message size limit from 10MB to 128MB.
 # The same limit is specified in nginx.conf for mail submitted via webmail and Z-Push.
 tools/editconf.py /etc/postfix/main.cf \
-	message_size_limit=134217728
+	message_size_limit=10485760 #134217728
 
 # Allow the two SMTP ports in the firewall.
 

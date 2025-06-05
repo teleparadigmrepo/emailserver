@@ -10,11 +10,11 @@
 # address entered by the user.
 
 import os, sqlite3, re
-import subprocess
-
 import utils
 from email_validator import validate_email as validate_email_, EmailNotValidError
 import idna
+import subprocess 
+import traceback
 
 def validate_email(email, mode=None):
 	# Checks that an email address is syntactically valid. Returns True/False.
@@ -139,12 +139,13 @@ def get_mail_users_ex(env, with_archived=False):
 	users = []
 	active_accounts = set()
 	c = open_database(env)
-	c.execute('SELECT email, privileges, quota FROM users')
-	for email, privileges, quota in c.fetchall():
+	c.execute('SELECT email, privileges, quota, daily_limit, emails_sent, last_reset FROM users')
+	for email, privileges, quota, daily_limit, emails_sent, last_reset in c.fetchall():
 		active_accounts.add(email)
 
 		(user, domain) = email.split('@')
 		box_size = 0
+		box_count = 0
 		box_quota = 0
 		percent = ''
 		try:
@@ -154,6 +155,7 @@ def get_mail_users_ex(env, with_archived=False):
 				for line in f.readlines():
 					(size, count) = line.split(' ')
 					box_size += int(size)
+					box_count += int(count)
 
 			try:
 				percent = (box_size / box_quota) * 100
@@ -162,6 +164,7 @@ def get_mail_users_ex(env, with_archived=False):
 
 		except:
 			box_size = '?'
+			box_count = '?'
 			box_quota = '?'
 			percent = '?'
 
@@ -171,11 +174,15 @@ def get_mail_users_ex(env, with_archived=False):
 		user = {
 			"email": email,
 			"privileges": parse_privs(privileges),
-            "quota": quota,
+			"quota": quota,
 			"box_quota": box_quota,
 			"box_size": sizeof_fmt(box_size) if box_size != '?' else box_size,
 			"percent": '%3.0f%%' % percent if type(percent) != str else percent,
+			"box_count": box_count,
 			"status": "active",
+			"daily_limit": daily_limit,
+			"emails_sent": emails_sent,
+			"last_reset": last_reset
 		}
 		users.append(user)
 
@@ -193,9 +200,13 @@ def get_mail_users_ex(env, with_archived=False):
 						"privileges": [],
 						"status": "inactive",
 						"mailbox": mbox,
-                        "box_size": '?',
-                        "box_quota": '?',
-                        "percent": '?',
+						"box_count": '?',
+			                        "box_size": '?',
+			                        "box_quota": '?',
+			                        "percent": '?',
+						"daily_limit": "?",
+						"emails_sent": "?",
+						"last_reset": "?"
 					}
 					users.append(user)
 
@@ -312,7 +323,7 @@ def get_mail_domains(env, filter_aliases=lambda alias : True, users_only=False):
 		domains.extend([get_domain(address, as_unicode=False) for address, _, _, auto in get_mail_aliases(env) if filter_aliases(address) and not auto ])
 	return set(domains)
 
-def add_mail_user(email, pw, privs, quota, env):
+def add_mail_user(email, pw, privs, quota, limit, env):
 	# validate email
 	if email.strip() == "":
 		return ("No email address provided.", 400)
@@ -329,6 +340,9 @@ def add_mail_user(email, pw, privs, quota, env):
 	# validate password
 	validate_password(pw)
 
+	# validate limit
+	validate_dailylimit(limit)
+
 	# validate privileges
 	if privs is None or privs.strip() == "":
 		privs = []
@@ -339,7 +353,7 @@ def add_mail_user(email, pw, privs, quota, env):
 			if validation: return validation
 
 	if quota is None:
-		quota = '0'
+		quota = get_default_quota()
 
 	try:
 		quota = validate_quota(quota)
@@ -354,8 +368,8 @@ def add_mail_user(email, pw, privs, quota, env):
 
 	# add the user to the database
 	try:
-		c.execute("INSERT INTO users (email, password, privileges, quota) VALUES (?, ?, ?, ?)",
-			(email, pw, "\n".join(privs), quota))
+		c.execute("INSERT INTO users (email, password, privileges, quota, daily_limit) VALUES (?, ?, ?, ?, ?)",
+			(email, pw, "\n".join(privs), quota, limit))
 	except sqlite3.IntegrityError:
 		return ("User already exists.", 400)
 
@@ -388,7 +402,6 @@ def hash_password(pw):
 	# http://wiki2.dovecot.org/Authentication/PasswordSchemes
 	return utils.shell('check_output', ["/usr/bin/doveadm", "pw", "-s", "SHA512-CRYPT", "-p", pw]).strip()
 
-
 def get_mail_quota(email, env):
 	conn, c = open_database(env, with_connection=True)
 	c.execute("SELECT quota FROM users WHERE email=?", (email,))
@@ -400,19 +413,46 @@ def get_mail_quota(email, env):
 
 
 def set_mail_quota(email, quota, env):
-	# validate that password is acceptable
-	quota = validate_quota(quota)
+	try:
+		quota = validate_quota(quota)
 
-	# update the database
-	conn, c = open_database(env, with_connection=True)
-	c.execute("UPDATE users SET quota=? WHERE email=?", (quota, email))
-	if c.rowcount != 1:
-		return ("That's not a user (%s)." % email, 400)
-	conn.commit()
+		conn, c = open_database(env, with_connection=True)
+		c.execute("UPDATE users SET quota=? WHERE email=?", (quota, email))
+		if c.rowcount != 1:
+			return ("That's not a user (%s)." % email, 400)
+		conn.commit()
+		dovecot_quota_recalc(email)
+		return "OK"
+	except Exception as e:
+		print("Error:", str(e))
+		traceback.print_exc()
+		return (f"Internal Server Error: {str(e)}", 500)
 
-	dovecot_quota_recalc(email)
+def validate_dailylimit(limit):
+	limit = limit.strip()
+	if limit == "":
+		raise ValueError("No limit provided.")
+	if limit == "0":
+		return limit
+	if re.search(r"[\s,.]", limit):
+		raise ValueError("Limit cannot contain spaces, commas, or decimal points.")
 
-	return "OK"
+	return limit
+
+def set_mail_dailylimit(email, dailylimit, env):
+	try:
+		dailylimit = validate_dailylimit(dailylimit)
+		conn, c = open_database(env, with_connection=True)
+		c.execute("UPDATE users SET daily_limit=? WHERE email=?", (dailylimit, email))
+		if c.rowcount != 1:
+			return ("That's not a user (%s)." % email, 400)
+		conn.commit()
+		dovecot_quota_recalc(email)
+		return "OK"
+	except Exception as e:
+		print("Error:", str(e))
+		traceback.print_exc()
+		return (f"Internal Server Error: {str(e)}", 500)
 
 def dovecot_quota_recalc(email):
 	# dovecot processes running for the user will not recognize the new quota setting
@@ -422,7 +462,15 @@ def dovecot_quota_recalc(email):
 	# subprocess.call(['doveadm', 'reload'])
 
 	# force dovecot to recalculate the quota info for the user.
-	subprocess.call(["doveadm", "quota", "recalc", "-u", email])
+	try:
+		subprocess.check_call(["doveadm", "quota", "recalc", "-u", email])
+	except subprocess.CalledProcessError as e:
+		print("Dovecot quota recalc failed:", e)
+		raise
+
+def get_default_quota(env):
+	config = utils.load_settings(env)
+	return config.get("default-quota", '10M')
 
 def validate_quota(quota):
 	# validate quota
@@ -430,10 +478,12 @@ def validate_quota(quota):
 
 	if quota == "":
 		raise ValueError("No quota provided.")
+	if quota == "0":
+		return quota
 	if re.search(r"[\s,.]", quota):
 		raise ValueError("Quotas cannot contain spaces, commas, or decimal points.")
-	if not re.match(r'^[\d]+[GM]?$', quota):
-		raise ValueError("Invalid quota.")
+	if not re.fullmatch(r'\d+[MG]', quota):
+		raise ValueError("Invalid quota. Must be a number followed by M or G (e.g., 100M or 1G), or 0 for unlimited.")
 
 	return quota
 

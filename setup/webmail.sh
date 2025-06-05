@@ -36,8 +36,8 @@ apt_install \
 #   https://github.com/mstilkerich/rcmcarddav/releases
 # The easiest way to get the package hashes is to run this script and get the hash from
 # the error message.
-VERSION=1.6.11
-HASH=d72da06b5f65142dab8b574f7676e0220541a3d4
+VERSION=1.6.9
+HASH=b63f74209cf287402f6f44b85877388899261f3c
 PERSISTENT_LOGIN_VERSION=bde7b6840c7d91de627ea14e81cf4133cbb3c07a # version 5.3
 HTML5_NOTIFIER_VERSION=68d9ca194212e15b3c7225eb6085dbcf02fd13d7 # version 0.6.4+
 CARDDAV_VERSION=4.4.3
@@ -135,7 +135,7 @@ cat > $RCM_CONFIG <<EOF;
 \$config['product_name'] = '$PRIMARY_HOSTNAME Webmail';
 \$config['cipher_method'] = 'AES-256-CBC'; # persistent login cookie and potentially other things
 \$config['des_key'] = '$SECRET_KEY'; # 37 characters -> ~256 bits for AES-256, see above
-\$config['plugins'] = array('html5_notifier', 'archive', 'zipdownload', 'password', 'managesieve', 'jqueryui', 'persistent_login', 'carddav');
+\$config['plugins'] = array('sendquota', 'html5_notifier', 'archive', 'zipdownload', 'password', 'managesieve', 'jqueryui', 'persistent_login', 'carddav');
 \$config['skin'] = 'elastic';
 \$config['login_autocomplete'] = 2;
 \$config['login_username_filter'] = 'email';

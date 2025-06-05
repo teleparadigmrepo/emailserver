@@ -118,6 +118,8 @@ source setup/nextcloud.sh
 source setup/zpush.sh
 source setup/management.sh
 source setup/munin.sh
+source setup/limit_daily_mails.sh
+source setup/over_quota.sh
 
 # Wait for the management daemon to start...
 until nc -z -w 4 127.0.0.1 10222

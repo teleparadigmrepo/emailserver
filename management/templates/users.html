@@ -13,24 +13,28 @@
 
 <p>Add an email address to this system. This will create a new login username/password.</p>
 
-<form class="form-inline" role="form" onsubmit="return do_add_user(); return false;">
+<form class="" role="form" onsubmit="return do_add_user(); return false;">
   <div class="form-group">
-    <label class="sr-only" for="adduserEmail">Email address</label>
+    <label class="" for="adduserEmail">Email address</label>
     <input type="email" class="form-control" id="adduserEmail" placeholder="Email Address">
   </div>
   <div class="form-group">
-    <label class="sr-only" for="adduserPassword">Password</label>
+    <label class="" for="adduserPassword">Password</label>
     <input type="password" class="form-control" id="adduserPassword" placeholder="Password">
+  </div>
+  <div class="form-group">
+      <label class="" for="adduserQuota">Quota (Storage)</label>
+      <input type="text" class="form-control" id="adduserQuota" placeholder="Quota" value="10M">
+  </div>
+  <div class="form-group">
+      <label class="" for="adduserEmailsLimit">Emails Daily Limit</label>
+      <input type="text" class="form-control" id="adduserEmailsLimit" placeholder="Emails Daily Limit" value="10">
   </div>
   <div class="form-group">
     <select class="form-control" id="adduserPrivs">
       <option value="">Normal User</option>
       <option value="admin">Administrator</option>
     </select>
-  </div>
-  <div class="form-group">
-      <label class="sr-only" for="adduserQuota">Quota</label>
-      <input type="text" class="form-control" id="adduserQuota" placeholder="Quota" style="width:5em;" value="0">
   </div>
   <button type="submit" class="btn btn-primary">Add User</button>
 </form>
@@ -39,17 +43,21 @@
   <li>Use <a href="#aliases">aliases</a> to create email addresses that forward to existing accounts.</li>
   <li>Administrators get access to this control panel.</li>
   <li>User accounts cannot contain any international (non-ASCII) characters, but <a href="#aliases">aliases</a> can.</li>
-  <li>Quotas may not contain any spaces, commas or decimal points. Suffixes of G (gigabytes) and M (megabytes) are allowed.  For unlimited storage enter 0 (zero)</li>
+  <li>If the quota is 0 then the user will get unlimited storage access.</li>
+  <li>If the emails limit is 0 then the user can send unlimited emails in a day. If it is 10, then the user can only send 10 emails in a day.</li>
 </ul>
 
 <h3>Existing mail users</h3>
 <table id="user_table" class="table" style="width: auto">
   <thead>
     <tr>
-      <th width="35%">Email Address</th>
+      <th width="30%">Email Address</th>
+      <th class="row-center">Messages</th>
       <th class="row-center">Size</th>
       <th class="row-center">Used</th>
       <th class="row-center">Quota</th>
+      <th class="row-center">Sent/Limit</th>
+      <th class="row-center">Last Limit Reset</th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -62,24 +70,31 @@
   <tr id="user-template">
     <td class='address'>
     </td>
-    <td class="box-size row-center"></td>
-    <td class="percent row-center"></td>
-	<td class="quota row-center">
-	</td>
+     <td class="box-count row-center"></td>
+     <td class="box-size row-center"></td>
+     <td class="percent row-center"></td>
+     <td class="quota row-center"></td>
+     <td class="sent-limit row-center"></td>
+     <td class="last-reset row-center"></td>
     <td class='actions'>
         <span class='privs'>
         </span>
-
         <span class="if_active">
           <a href="#" onclick="users_set_quota(this); return false;" class='setquota' title="Set Quota">
               set quota
           </a>
           |
         </span>
-
         <span class="if_active">
           <a href="#" onclick="users_set_password(this); return false;" class='setpw' title="Set Password">
             set password
+          </a>
+          |
+        </span>
+
+	<span class="if_active">
+          <a href="#" onclick="users_set_daily_limit(this); return false;" class='setpw' title="Set Daily limit">
+            set daily limit
           </a>
           |
         </span>
@@ -163,6 +178,15 @@ curl -X POST -d "email=new_user@mydomail.com" https://{{hostname}}/admin/mail/us
 
 <script>
 function show_users() {
+  api(
+    "/system/default-quota",
+    "GET",
+    {},
+    function(r) {
+      $('#adduserQuota').val(r['default-quota']);
+    }
+  );
+
   $('#user_table tbody').html("<tr><td colspan='2' class='text-muted'>Loading...</td></tr>")
   api(
     "/mail/users",
@@ -171,7 +195,7 @@ function show_users() {
     function(r) {
       $('#user_table tbody').html("");
       for (var i = 0; i < r.length; i++) {
-        var hdr = $("<tr><th colspan='6' style='background-color: #EEE'></th></tr>");
+        var hdr = $("<tr><th colspan='8' style='background-color: #EEE'></th></tr>");
         hdr.find('th').text(r[i].domain);
         $('#user_table tbody').append(hdr);
 
@@ -191,12 +215,22 @@ function show_users() {
           n.attr('data-email', user.email);
           n.attr('data-quota', user.quota);
           n.find('.address').text(user.email);
+          n.find('.box-count').text((user.box_count).toLocaleString('en'));
+          if (user.box_count == '?') {
+            n.find('.box-count').attr('title', 'Message count is unkown')
+          }
           n.find('.box-size').text(user.box_size);
           if (user.box_size == '?') {
             n.find('.box-size').attr('title', 'Mailbox size is unkown')
           }
           n.find('.percent').text(user.percent);
           n.find('.quota').text((user.quota == '0') ? 'unlimited' : user.quota);
+
+	  var sent_limit = user.emails_sent + '/' + user.daily_limit;
+	  n.attr('data-daily-limit', user.daily_limit)
+          n.find('.sent-limit').text(sent_limit);
+          n.find('.last-reset').text(user.last_reset);
+
           n2.find('.restore_info tt').text(user.mailbox);
 
           if (user.status == 'inactive') continue;
@@ -226,6 +260,7 @@ function do_add_user() {
   var pw = $("#adduserPassword").val();
   var privs = $("#adduserPrivs").val();
   var quota = $("#adduserQuota").val();
+  var dailylimit = $("#adduserEmailsLimit").val();
   api(
     "/mail/users/add",
     "POST",
@@ -233,7 +268,8 @@ function do_add_user() {
       email: email,
       password: pw,
       privileges: privs,
-      quota: quota
+      quota: quota,
+      dailylimit: dailylimit
     },
     function(r) {
       // Responses are multiple lines of pre-formatted text.
@@ -301,6 +337,36 @@ function users_set_quota(elem) {
                 },
                 function(r) {
                     show_modal_error("Set Quota", r);
+                });
+        });
+}
+
+function users_set_daily_limit(elem) {
+    var email = $(elem).parents('tr').attr('data-email');
+    var limit = $(elem).parents('tr').attr('data-daily-limit');
+
+    show_modal_confirm(
+        "Set Daily Limit",
+        $("<p>Set limit for <b>" + email + "</b>?</p>" +
+            "<p>" +
+            "<label for='users_daily_limit' style='display: block; font-weight: normal'>Limit:</label>" +
+            "<input type='text' id='users_daily_limit' value='" + limit + "'></p>" +
+            "<p><small>Limit may not contain any spaces or commas.It must be a number.</small></p>" +
+            "<p><small>For unlimited email sending accessibility enter 0 (zero)</small></p>"),
+        "Set Daily Limit",
+        function() {
+            api(
+                "/mail/users/dailylimit",
+                "POST",
+                {
+                    email: email,
+                    dailylimit: $('#users_daily_limit').val()
+                },
+                function(r) {
+                    show_users();
+                },
+                function(r) {
+                    show_modal_error("Set Daily Limit", r);
                 });
         });
 }
