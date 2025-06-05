@@ -122,7 +122,7 @@ if user:
     quota_bytes = parse_quota(quota_str)
     estimated_size = int(params.get("size", "0"))
     box_size, _, _ = get_maildir_usage(MAIL_ROOT, sender)
-    log(f"${sender}, boxsize: {box_size}, quota_bytes: {quota_bytes}, estimatedsize: {estimated_size}")
+    log(f"{sender}, boxsize: {box_size}, quota_bytes: {quota_bytes}, estimatedsize: {estimated_size}")
     if box_size is not None and quota_bytes is not None:
         remaining = quota_bytes - box_size
         if remaining < estimated_size:
