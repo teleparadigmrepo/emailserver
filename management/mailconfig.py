@@ -429,7 +429,7 @@ def set_mail_quota(email, quota, env):
 		return (f"Internal Server Error: {str(e)}", 500)
 
 def validate_dailylimit(limit):
-	limit = limit.strip()
+	limit = str(limit).strip()
 	if limit == "":
 		raise ValueError("No limit provided.")
 	if limit == "0":
