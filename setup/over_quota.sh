@@ -127,6 +127,6 @@ EOF
 
 echo "Changing file permissions"
 
-chown root:root /opt/mail-policies/sender_quota_policy.py
+chown www-data:www-data /opt/mail-policies/sender_quota_policy.py
 chmod 755 /opt/mail-policies/sender_quota_policy.py
 chmod +x /opt/mail-policies/sender_quota_policy.py
