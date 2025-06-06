@@ -125,8 +125,6 @@ window.rcmail && rcmail.addEventListener('init', function() {
 
 EOF
 
-echo "Changing file permissions"
+echo "Giving /home/user-data/mail/mailboxes directory permissions to user www-data"
 
-chown www-data:www-data /opt/mail-policies/sender_quota_policy.py
-chmod 755 /opt/mail-policies/sender_quota_policy.py
-chmod +x /opt/mail-policies/sender_quota_policy.py
+sudo setfacl -R -m u:www-data:rx /home/user-data/mail/mailboxes

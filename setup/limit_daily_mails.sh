@@ -3,7 +3,7 @@
 echo "Setting up Daily Limit Mails..."
 
 touch /var/log/sender_quota_policy.log
-chown root:root /var/log/sender_quota_policy.log
+chown www-data:www-data /var/log/sender_quota_policy.log
 chmod 666 /var/log/sender_quota_policy.log
 
 echo "Creating a directory..."
