@@ -146,6 +146,7 @@ cat > $RCM_CONFIG <<EOF;
 /* prevent CSRF, requires php 7.3+ */
 \$config['session_samesite'] = 'Strict';
 \$config['quota_zero_as_unlimited'] = true;
+\$config['max_message_size'] = 10485760; // in bytes → 10 MB -- This will change the Allowed attachment file size to 7.5MB
 ?>
 EOF
 
