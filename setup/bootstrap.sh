@@ -92,7 +92,9 @@ cd "$HOME/mailinabox" || exit
 # fi
 
 echo "Fetching latest code from git..."
-git pull origin main
+git fetch origin #downloads the latest changes from GitHub (but doesn't apply them yet)
+git reset --hard origin/main #resets your working directory and staging area to match the latest commit from the main branch on GitHub
+git clean -fd #removes untracked files and directories (like temp files, logs, etc.)
 
 # Start setup script.
 setup/start.sh
