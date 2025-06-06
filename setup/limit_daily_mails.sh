@@ -94,7 +94,7 @@ def log(msg):
 
 params = {}
 while True:
-    line = sys.stdin.readline().strip()
+        line = sys.stdin.readline().strip()
         if not line:
             break
         name, value = line.split("=", 1)
