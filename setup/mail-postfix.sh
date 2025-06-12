@@ -115,7 +115,7 @@ tools/editconf.py /etc/postfix/master.cf -s -w \
 	  -o header_checks=pcre:/etc/postfix/outgoing_mail_header_filters
 	  -o nested_header_checks=" \
 	"sender_policy unix  -       n       n       -       -       spawn
-	  user=www-data argv=/usr/bin/python3 /opt/mail-policies/sender_quota_policy.py
+	  user=www-data argv=/usr/bin/python3 /opt/mail-policies/sender_quota_policy.py"
 
 # Install the `outgoing_mail_header_filters` file required by the new 'authclean' service.
 cp conf/postfix_outgoing_mail_header_filters /etc/postfix/outgoing_mail_header_filters
