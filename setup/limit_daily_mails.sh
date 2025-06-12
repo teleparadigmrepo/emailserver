@@ -124,7 +124,10 @@ if user:
     box_size, _, _ = get_maildir_usage(MAIL_ROOT, sender)
     log(f"{sender}, boxsize: {box_size}, quota_bytes: {quota_bytes}, estimatedsize: {estimated_size}")
     if box_size is not None and quota_bytes is not None:
-        remaining = quota_bytes - box_size
+        if quota_bytes == 0:
+            remaining = float('inf')  # unlimited quota
+        else:
+            remaining = quota_bytes - box_size
         if remaining < estimated_size:
             action = "REJECT Not enough mailbox space"
             log(f"{sender} blocked: {box_size} used of {quota_bytes}, needs {estimated_size}")
