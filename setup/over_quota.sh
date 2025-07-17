@@ -125,7 +125,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
 
 EOF
 
-echo "Giving /home/user-data/mail/mailboxes directory permissions to user www-data"
+# echo "Giving /home/user-data/mail/mailboxes directory permissions to user www-data"
 
-sudo setfacl -R -m u:www-data:rx /home/user-data/mail/mailboxes
-sudo find /home/user-data/mail/mailboxes -name maildirsize -exec setfacl -m u:www-data:r {} \;
+# sudo setfacl -R -m u:www-data:rx /home/user-data/mail/mailboxes
+# sudo find /home/user-data/mail/mailboxes -name maildirsize -exec setfacl -m u:www-data:r {} \;

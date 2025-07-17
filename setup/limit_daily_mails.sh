@@ -3,7 +3,7 @@
 echo "Setting up Daily Limit Mails..."
 
 touch /var/log/sender_quota_policy.log
-chown www-data:www-data /var/log/sender_quota_policy.log
+chown mail:mail /var/log/sender_quota_policy.log
 chmod 666 /var/log/sender_quota_policy.log
 
 echo "Creating a directory..."
@@ -160,6 +160,6 @@ EOF
 
 echo "Changing file permissions"
 
-chown www-data:www-data /opt/mail-policies/sender_quota_policy.py
+chown mail:mail /opt/mail-policies/sender_quota_policy.py
 chmod 755 /opt/mail-policies/sender_quota_policy.py
 chmod +x /opt/mail-policies/sender_quota_policy.py
