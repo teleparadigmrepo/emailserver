@@ -422,7 +422,7 @@ def set_mail_quota(email, quota, env):
 			return ("That's not a user (%s)." % email, 400)
 		conn.commit()
 		dovecot_quota_recalc(email)
-		return "OK"
+		return "OK Applied quota %s to %s." % (quota, email)
 	except Exception as e:
 		print("Error:", str(e))
 		traceback.print_exc()
@@ -470,7 +470,7 @@ def dovecot_quota_recalc(email):
 
 def get_default_quota(env):
 	config = utils.load_settings(env)
-	return config.get("default-quota", '10M')
+	return config.get("default-quota", '100M')
 
 def validate_quota(quota):
 	# validate quota
