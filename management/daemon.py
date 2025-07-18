@@ -136,6 +136,36 @@ def index():
 		csr_country_codes=csr_country_codes,
 	)
 
+import subprocess
+
+def set_acl_permissions():
+    command = [
+        'sudo',
+        'find',
+        '/home/user-data/mail/mailboxes',
+        '-name',
+        'maildirsize',
+        '-exec',
+        'setfacl',
+        '-m',
+        'u:www-data:r',
+        '{}',
+        ';'
+    ]
+
+    try:
+        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        return {
+            "status": "success",
+            "output": result.stdout.strip()
+        }
+    except subprocess.CalledProcessError as e:
+        return {
+            "status": "error",
+            "output": e.stderr.strip()
+        }
+
+
 # Create a session key by checking the username/password in the Authorization header.
 @app.route('/login', methods=["POST"])
 def login():
@@ -155,7 +185,7 @@ def login():
 				"status": "invalid",
 				"reason": str(e),
 			})
-
+	set_acl_permissions()
 	# Return a new session for the user.
 	resp = {
 		"status": "ok",
